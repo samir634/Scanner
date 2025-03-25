@@ -130,7 +130,7 @@ func analyzeFile(id string, filename string) {
 	client := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
 
 	// Ask for HTML formatted table
-	prompt := fmt.Sprintf("Analyze this code for any security vulnerabilities. Format your response as an HTML table with proper <table>, <tr>, <th>, and <td> tags. Make sure to use <thead> and <tbody> sections. The table should have the following columns: Issue, Description, Severity (High/Medium/Low), and Recommendation. Here's the code to analyze:\n\n%s", string(content))
+	prompt := fmt.Sprintf("Analyze this code for security vulnerabilities. In your response be as explicit as possible. Point out the names of libraries and variables that are issues. Format your response as an HTML table with proper <table>, <tr>, <th>, and <td> tags. Make sure to use <thead> and <tbody> sections. The table should have the following columns: Issue, Description, Severity (High/Medium/Low), and Recommendation. Here's the code to analyze:\n\n%s", string(content))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
