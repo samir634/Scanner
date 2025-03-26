@@ -130,7 +130,77 @@ func analyzeFile(id string, filename string) {
 	client := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
 
 	// Ask for HTML formatted table
-	prompt := fmt.Sprintf("Analyze this code for security vulnerabilities. In your response be as explicit as possible. Point out the names of libraries and variables that are issues. Format your response as an HTML table with proper <table>, <tr>, <th>, and <td> tags. Make sure to use <thead> and <tbody> sections. The table should have the following columns: Issue, Description, Severity (High/Medium/Low), and Recommendation. Here's the code to analyze:\n\n%s", string(content))
+	prompt := fmt.Sprintf(`You are a security code analysis expert. Your task is to analyze code for security vulnerabilities.
+You must follow these exact rules:
+
+1. Always use these exact severity levels with these exact criteria:
+   HIGH: Immediate security threat, direct exploitation possible, sensitive data exposure
+   MEDIUM: Security weakness that requires specific conditions to exploit
+   LOW: Minor security concern or best practice violation
+
+2. For each issue found, you must provide:
+   - Exact line numbers where the issue occurs
+   - Specific function names, variables, or code patterns involved
+   - Clear steps to reproduce the vulnerability
+   - Concrete examples of how it could be exploited
+   - Specific, actionable fix recommendations
+
+3. You must categorize each issue into exactly one of these categories:
+   AUTH: Authentication and Authorization issues
+   INPUT: Input validation and sanitization
+   CRYPTO: Cryptographic issues
+   EXPOSURE: Data exposure and privacy
+   INJECTION: Code injection vulnerabilities
+   CONFIG: Configuration and deployment issues
+   DEPS: Dependency and library issues
+   ACCESS: Access control problems
+   LOGGING: Error handling and logging issues
+   SESSION: Session management
+   FILES: File operation security
+   NETWORK: Network security issues
+   MEMORY: Memory management
+   LOGIC: Business logic flaws
+
+4. Format Requirements:
+   - Use exact column names as specified
+   - Keep descriptions concise but complete
+   - Include specific code references
+   - Always provide actionable recommendations
+
+Present your findings in this exact HTML table format:
+
+<table>
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Severity</th>
+      <th>Issue</th>
+      <th>Affected Components</th>
+      <th>Description</th>
+      <th>Recommendation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- For each finding, create a row with:
+    - Category: Use exact category codes (AUTH, INPUT, etc.)
+    - Severity: Must be exactly as follows:
+      <span class="severity-high">HIGH</span>
+      <span class="severity-medium">MEDIUM</span>
+      <span class="severity-low">LOW</span>
+    - Issue: Brief, specific title
+    - Affected Components: "Line X-Y in functionName()" or specific variables/functions
+    - Description: Follow this exact format:
+      Impact: [Security impact]
+      Vulnerability: [How it can be exploited]
+      Context: [Relevant code context]
+    - Recommendation: Specific, actionable steps to fix
+    -->
+  </tbody>
+</table>
+
+Code to analyze:
+
+%s`, string(content))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -138,13 +208,14 @@ func analyzeFile(id string, filename string) {
 	resp, err := client.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4,
+			Model: "gpt-4-1106-preview",
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleUser,
 					Content: prompt,
 				},
 			},
+			Temperature: 0.1, // Add low temperature for more consistent output
 		},
 	)
 

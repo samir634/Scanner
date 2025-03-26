@@ -75,35 +75,91 @@ func analyzeFile(filePath string) (string, error) {
 	client := openai.NewClient(apiKey)
 
 	// Prepare the messages for the chat completion
-	messages := []openai.ChatCompletionMessage{
-		{
-			Role:    openai.ChatMessageRoleSystem,
-			Content: "You are a security code analysis expert. Analyze the provided code and identify security vulnerabilities. Format the output as an HTML table with severity, issue, location, and description columns. Do not mention OpenAI or any AI in your response.",
-		},
-		{
-			Role:    openai.ChatMessageRoleUser,
-			Content: fmt.Sprintf(`Analyze the following code for security vulnerabilities. 
-Provide a detailed analysis in the following format:
+	systemPrompt := `You are a security code analysis expert. Your task is to analyze code for security vulnerabilities.
+You must follow these exact rules:
+
+1. Always use these exact severity levels with these exact criteria:
+   HIGH: Immediate security threat, direct exploitation possible, sensitive data exposure
+   MEDIUM: Security weakness that requires specific conditions to exploit
+   LOW: Minor security concern or best practice violation
+
+2. For each issue found, you must provide:
+   - Exact line numbers where the issue occurs
+   - Specific function names, variables, or code patterns involved
+   - Clear steps to reproduce the vulnerability
+   - Concrete examples of how it could be exploited
+   - Specific, actionable fix recommendations
+
+3. You must categorize each issue into exactly one of these categories:
+   AUTH: Authentication and Authorization issues
+   INPUT: Input validation and sanitization
+   CRYPTO: Cryptographic issues
+   EXPOSURE: Data exposure and privacy
+   INJECTION: Code injection vulnerabilities
+   CONFIG: Configuration and deployment issues
+   DEPS: Dependency and library issues
+   ACCESS: Access control problems
+   LOGGING: Error handling and logging issues
+   SESSION: Session management
+   FILES: File operation security
+   NETWORK: Network security issues
+   MEMORY: Memory management
+   LOGIC: Business logic flaws
+
+4. Format Requirements:
+   - Use exact column names as specified
+   - Keep descriptions concise but complete
+   - Include specific code references
+   - Always provide actionable recommendations`
+
+	analysisPrompt := fmt.Sprintf(`Analyze the following code and present the findings in this exact HTML table format:
 
 <table>
-  <tr>
-    <th>Severity</th>
-    <th>Issue</th>
-    <th>Location</th>
-    <th>Description</th>
-  </tr>
-  <!-- Add rows for each vulnerability found -->
+  <thead>
+    <tr>
+      <th>Severity</th>
+      <th>Category</th>
+      <th>Location</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- For each finding, create a row with:
+    - Severity: Must be exactly as follows:
+      <span class="severity-high">HIGH</span>
+      <span class="severity-medium">MEDIUM</span>
+      <span class="severity-low">LOW</span>
+    - Category: Use exact category codes (AUTH, INPUT, etc.)
+    - Location: "Line X-Y in functionName()" or "Line X in fileName"
+    - Description: Follow this exact format:
+      Issue: [Brief title]
+      Component: [Affected code element]
+      Impact: [Security impact]
+      Fix: [Specific solution]
+    -->
+  </tbody>
 </table>
 
 Code to analyze:
-%s`, string(content)),
+
+%s`, string(content))
+
+	messages := []openai.ChatCompletionMessage{
+		{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: systemPrompt,
+		},
+		{
+			Role:    openai.ChatMessageRoleUser,
+			Content: analysisPrompt,
 		},
 	}
 
 	// Create the chat completion request
 	req := openai.ChatCompletionRequest{
-		Model:    openai.GPT4,
+		Model:    "gpt-4-1106-preview",
 		Messages: messages,
+		Temperature: 0.1, // Add low temperature for more consistent output
 	}
 
 	// Send the request
@@ -122,6 +178,12 @@ Code to analyze:
 func convertHTMLToPlainText(html string) string {
 	// Basic HTML to plain text conversion
 	text := html
+
+	// Handle severity levels with ANSI color codes
+	text = strings.ReplaceAll(text, `<span class="severity-high">HIGH</span>`, "\033[1;31mHIGH\033[0m")     // Bold Red
+	text = strings.ReplaceAll(text, `<span class="severity-medium">MEDIUM</span>`, "\033[1;33mMEDIUM\033[0m") // Bold Yellow
+	text = strings.ReplaceAll(text, `<span class="severity-low">LOW</span>`, "\033[1;32mLOW\033[0m")       // Bold Green
+
 	text = strings.ReplaceAll(text, "<br>", "\n")
 	text = strings.ReplaceAll(text, "</p>", "\n")
 	text = strings.ReplaceAll(text, "<h1>", "\n# ")
@@ -136,7 +198,7 @@ func convertHTMLToPlainText(html string) string {
 	text = strings.ReplaceAll(text, "<th>", " | ")
 	text = strings.ReplaceAll(text, "</th>", "")
 	
-	// Remove HTML tags
+	// Remove remaining HTML tags
 	text = regexp.MustCompile(`<[^>]*>`).ReplaceAllString(text, "")
 	
 	// Clean up extra whitespace

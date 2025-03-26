@@ -43,40 +43,72 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen p-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8 tracking-wide text-gradient">Code Analysis</h1>
-        <div className="bg-white/10 backdrop-blur-sm p-6 rounded-lg shadow-md border border-white/20">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                Upload Code File
-              </label>
-              <input
-                type="file"
-                onChange={handleFileChange}
-                accept=".zip,.js,.jsx,.ts,.tsx,.py,.java,.cpp,.c,.cs,.go,.rb,.php"
-                className="w-full p-2 bg-white/5 border border-white/20 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              <p className="mt-1 text-sm text-gray-300">
-                Supported formats: ZIP, JavaScript, TypeScript, Python, Java, C++, C, C#, Go, Ruby, PHP
-              </p>
+    <div className="min-h-screen flex flex-col">
+      <header className="bg-gray-800 border-b border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="h-16 flex items-center justify-between">
+            <div className="flex items-center">
+              <h1 className="text-xl font-semibold text-gray-100">Code Analysis</h1>
             </div>
-            <button
-              type="submit"
-              disabled={!file || loading}
-              className={`w-full py-2 px-4 rounded-md text-white font-medium transition-colors ${
-                !file || loading
-                  ? 'bg-gray-600 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-            >
-              {loading ? 'Uploading...' : 'Analyze Code'}
-            </button>
-          </form>
+          </div>
         </div>
-      </div>
-    </main>
+      </header>
+
+      <main className="flex-1 bg-gray-900">
+        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+              <div className="px-4 py-5 sm:p-6">
+                <h2 className="text-lg font-medium leading-6 text-gray-100 mb-4">
+                  Upload Your Code
+                </h2>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300">
+                      Select a file to analyze
+                    </label>
+                    <div className="mt-2">
+                      <input
+                        type="file"
+                        onChange={handleFileChange}
+                        accept=".zip,.js,.jsx,.ts,.tsx,.py,.java,.cpp,.c,.cs,.go,.rb,.php"
+                        className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-700 file:text-gray-200 hover:file:bg-gray-600 focus:outline-none"
+                        required
+                      />
+                    </div>
+                    <p className="mt-2 text-sm text-gray-400">
+                      Supported formats: ZIP, JavaScript, TypeScript, Python, Java, C++, C, C#, Go, Ruby, PHP
+                    </p>
+                  </div>
+                  <div>
+                    <button
+                      type="submit"
+                      disabled={!file || loading}
+                      className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                        !file || loading
+                          ? 'bg-gray-600 cursor-not-allowed'
+                          : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-gray-800'
+                      }`}
+                    >
+                      {loading ? (
+                        <span className="flex items-center">
+                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Processing...
+                        </span>
+                      ) : (
+                        'Analyze Code'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 } 
